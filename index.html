@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eranos</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ===== ЦВЕТА ТЕМ ===== */
+  :root {
+    --bg-image: url('bg.jpg');
+    --overlay: linear-gradient(180deg, rgba(10,20,40,.35), rgba(10,20,40,.6));
+    --card: rgba(255,255,255,0.12);
+    --card-border: rgba(255,255,255,0.25);
+    --btn: rgba(255,255,255,0.15);
+    --btn-border: rgba(255,255,255,0.3);
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,0.8);
+  }
+  body[data-theme="2"] {
+    --bg-image: url('bg2.jpg');
+    --overlay: linear-gradient(180deg, rgba(70,30,5,.30), rgba(50,20,0,.55));
+    --card: rgba(255,210,150,0.14);
+    --card-border: rgba(255,205,140,0.35);
+    --btn: rgba(255,190,120,0.18);
+    --btn-border: rgba(255,200,130,0.35);
+    --text: #fff6ea;
+    --text-dim: rgba(255,235,210,0.85);
+  }
+  body[data-theme="3"] {
+    --bg-image: url('bg3.jpg');
+    --overlay: linear-gradient(180deg, rgba(10,35,50,.35), rgba(5,25,40,.6));
+    --card: rgba(170,220,240,0.12);
+    --card-border: rgba(180,225,245,0.3);
+    --btn: rgba(150,205,230,0.16);
+    --btn-border: rgba(170,220,240,0.32);
+    --text: #eefaff;
+    --text-dim: rgba(220,240,250,0.85);
+  }
+  body[data-theme="4"] {
+    --bg-image: url('bg4.jpg');
+    --overlay: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.7));
+    --card: rgba(200,200,200,0.08);
+    --card-border: rgba(220,220,220,0.18);
+    --btn: rgba(190,190,190,0.10);
+    --btn-border: rgba(210,210,210,0.2);
+    --text: #e8e8e8;
+    --text-dim: rgba(220,220,220,0.6);
+  }
+
+  body {
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Фоновое фото с размытием */
+  .bg {
+    position: fixed;
+    inset: -40px;
+    background: var(--bg-image) center/cover no-repeat;
+    filter: blur(18px) saturate(1.2);
+    transform: scale(1.1);
+    z-index: -2;
+  }
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    z-index: -1;
+    transition: .6s;
+  }
+
+  /* ===== ЖИДКОЕ СТЕКЛО: карточка ===== */
+  .card {
+    position: relative;
+    overflow: hidden;
+    background: var(--card);
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255,255,255,0.15);
+    max-width: 440px;
+    width: 100%;
+    padding: 42px 28px;
+    text-align: center;
+    margin-top: 10vh;
+    transition: .6s;
+  }
+
+  /* Блик сверху — отражение света на стекле */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.22), transparent);
+    border-radius: 24px 24px 50% 50%;
+    pointer-events: none;
+  }
+
+  /* Градиентная грань стекла */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.5), rgba(255,255,255,0.08) 40%,
+      rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.3));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--card-border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 30px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  .tagline {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin-bottom: 30px;
+    transition: .6s;
+  }
+
+  .links { display: flex; flex-direction: column; gap: 12px; }
+
+  /* ===== ЖИДКОЕ СТЕКЛО: кнопки ===== */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    background: var(--btn);
+    border: 1px solid var(--btn-border);
+    color: var(--text);
+    text-decoration: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: 0.25s;
+  }
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15), transparent);
+    border-radius: 14px 14px 50% 50%;
+    pointer-events: none;
+  }
+  .btn:hover {
+    background: var(--card-border);
+    transform: translateY(-2px);
+  }
+
+  .icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* ===== ЖИДКОЕ СТЕКЛО: кнопка темы ===== */
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    position: fixed;
+    border: 1px solid var(--card-border);
+    background: var(--card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 4px 16px rgba(0,0,0,.3),
+                inset 0 1px 0 rgba(255,255,255,0.18);
+    overflow: hidden;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: .4s;
+  }
+  .theme-toggle::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .theme-toggle:active { transform: scale(.9); }
+
+  footer {
+    margin-top: auto;
+    padding-top: 40px;
+    color: var(--text-dim);
+    font-size: 13px;
+    transition: .6s;
+  }
+</style>
+</head>
+<body data-theme="1">
+  <div class="bg"></div>
+  <div class="bg-overlay"></div>
+
+  <button class="theme-toggle" onclick="switchTheme()" title="Сменить тему">🎨</button>
+
+  <div class="card">
+    <img class="avatar" src="avatar.jpg" alt="eranos">
+    <h1>eranos</h1>
+    <p class="tagline">welcome to my page ✦</p>
+
+    <div class="links">
+      <a class="btn" href="https://t.me/eranosfake" target="_blank">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.87 8.9 19.2c.53 0 .76-.23 1.04-.5l2.5-2.4 5.18 3.8c.95.52 1.62.25 1.88-.88L22.9 5.6c.3-1.38-.5-1.92-1.42-1.58L2.4 11.15c-1.34.52-1.33 1.27-.23 1.6l4.76 1.49L18.3 7.9c.56-.37 1.07-.17.65.2L9.04 15.87Z"/></svg>
+        Telegram
+      </a>
+      <a class="btn" href="https://www.tiktok.com/@kanasagods?_r=1&amp;_t=ZS-9ASi6LDthMF" target="_blank">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M16.6 3c.36 1.98 1.7 3.52 3.9 3.68v3.1c-1.5.14-2.8-.34-4.3-1.24v6.1c0 3.78-2.76 6.36-6.25 6.36A5.9 5.9 0 0 1 4 14.9c0-3.4 2.9-5.9 6.7-5.7v3.2c-1.84-.34-3.4.76-3.4 2.4 0 1.5 1.2 2.55 2.7 2.55 1.7 0 3-1.2 3-3.3V3h3.6Z"/></svg>
+        TikTok
+      </a>
+      <a class="btn" href="mailto:wox333666@gmail.com">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 7.3L4.2 7v10.8h15.6V7L12 12.3Z"/></svg>
+        моя почта
+      </a>
+    </div>
+  </div>
+
+  <footer>© 2026 eranos</footer>
+
+<script>
+  let currentTheme = 1;
+  const totalThemes = 4;
+  function switchTheme() {
+    currentTheme = currentTheme % totalThemes + 1;
+    document.body.setAttribute('data-theme', currentTheme);
+  }
+</script>
+</body>
+</html>
