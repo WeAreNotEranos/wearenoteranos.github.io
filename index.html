@@ -2,275 +2,277 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>eranos</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  /* ===== ЦВЕТА ТЕМ ===== */
+  /* ===== ТЕМЫ ===== */
   :root {
     --bg-image: url('bg.JPG');
-    --overlay: linear-gradient(180deg, rgba(10,20,40,.35), rgba(10,20,40,.6));
-    --card: rgba(255,255,255,0.12);
-    --card-border: rgba(255,255,255,0.25);
-    --btn: rgba(255,255,255,0.15);
-    --btn-border: rgba(255,255,255,0.3);
-    --text: #ffffff;
-    --text-dim: rgba(255,255,255,0.8);
+    --shade: rgba(10,20,40,.08);
+    --g1: rgba(255,255,255,.18);
+    --g2: rgba(255,255,255,.03);
+    --edge: rgba(255,255,255,.6);
+    --glow: rgba(120,190,255,.30);
+    --text: #fff;
+    --text-dim: rgba(255,255,255,.88);
   }
   body[data-theme="2"] {
     --bg-image: url('bg2.JPG');
-    --overlay: linear-gradient(180deg, rgba(70,30,5,.30), rgba(50,20,0,.55));
-    --card: rgba(255,210,150,0.14);
-    --card-border: rgba(255,205,140,0.35);
-    --btn: rgba(255,190,120,0.18);
-    --btn-border: rgba(255,200,130,0.35);
-    --text: #fff6ea;
-    --text-dim: rgba(255,235,210,0.85);
+    --shade: rgba(60,25,0,.08);
+    --g1: rgba(255,224,175,.20);
+    --g2: rgba(255,190,120,.04);
+    --edge: rgba(255,232,190,.65);
+    --glow: rgba(255,170,90,.32);
+    --text: #fff8ee;
+    --text-dim: rgba(255,240,218,.9);
   }
   body[data-theme="3"] {
     --bg-image: url('bg3.JPG');
-    --overlay: linear-gradient(180deg, rgba(10,35,50,.35), rgba(5,25,40,.6));
-    --card: rgba(170,220,240,0.12);
-    --card-border: rgba(180,225,245,0.3);
-    --btn: rgba(150,205,230,0.16);
-    --btn-border: rgba(170,220,240,0.32);
-    --text: #eefaff;
-    --text-dim: rgba(220,240,250,0.85);
+    --shade: rgba(5,25,45,.08);
+    --g1: rgba(195,232,252,.20);
+    --g2: rgba(150,205,235,.04);
+    --edge: rgba(205,238,255,.65);
+    --glow: rgba(90,190,255,.32);
+    --text: #f0faff;
+    --text-dim: rgba(228,244,253,.9);
   }
   body[data-theme="4"] {
     --bg-image: url('bg4.JPG');
-    --overlay: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.7));
-    --card: rgba(200,200,200,0.08);
-    --card-border: rgba(220,220,220,0.18);
-    --btn: rgba(190,190,190,0.10);
-    --btn-border: rgba(210,210,210,0.2);
-    --text: #e8e8e8;
-    --text-dim: rgba(220,220,220,0.6);
+    --shade: rgba(0,0,0,.16);
+    --g1: rgba(225,225,232,.15);
+    --g2: rgba(200,200,208,.03);
+    --edge: rgba(240,240,248,.45);
+    --glow: rgba(160,170,200,.22);
+    --text: #f2f2f2;
+    --text-dim: rgba(232,232,232,.78);
   }
 
+  html { height: 100%; }
   body {
-    font-family: system-ui, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    min-height: 100%;
+    min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));
     color: var(--text);
-    position: relative;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Фоновое фото с размытием */
+  /* Фон: чёткий, без размытия */
   .bg {
-    position: fixed;
-    inset: -40px;
+    position: fixed; inset: 0; z-index: -2;
     background: var(--bg-image) center/cover no-repeat;
-    filter: blur(18px) saturate(1.2);
-    transform: scale(1.1);
-    z-index: -2;
+    transition: opacity .3s ease;
   }
-  .bg-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--overlay);
-    z-index: -1;
-    transition: .6s;
-  }
+  .bg.fade { opacity: 0; }
+  .bg-shade { position: fixed; inset: 0; z-index: -1; background: var(--shade); pointer-events: none; }
 
-  /* ===== ЖИДКОЕ СТЕКЛО: карточка ===== */
-  .card {
+  /* ===== LIQUID GLASS ===== */
+  .glass {
     position: relative;
-    overflow: hidden;
-    background: var(--card);
-    border-radius: 24px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
-                inset 0 1px 0 rgba(255,255,255,0.15);
-    max-width: 440px;
-    width: 100%;
-    padding: 42px 28px;
-    text-align: center;
-    margin-top: 10vh;
-    transition: .6s;
+    isolation: isolate;
+    background: linear-gradient(135deg, var(--g1), var(--g2));
+    -webkit-backdrop-filter: blur(7px) saturate(190%) brightness(1.1);
+            backdrop-filter: blur(7px) saturate(190%) brightness(1.1);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.12),
+      inset 2px 2.5px 1px -1px rgba(255,255,255,.85),    /* яркая кромка сверху-слева */
+      inset -2px -2.5px 1px -1px rgba(255,255,255,.45),  /* кромка снизу-справа */
+      inset 4px 5px 12px -2px rgba(140,210,255,.30),     /* голубая «радужная» кайма */
+      inset -4px -5px 12px -2px rgba(255,160,215,.22),   /* розовая кайма */
+      inset 0 0 26px rgba(255,255,255,.07),
+      0 16px 44px rgba(0,0,0,.26),
+      0 2px 6px rgba(0,0,0,.12);
   }
-
-  /* Блик сверху — отражение света на стекле */
-  .card::before {
+  /* блик под пальцем + свечение снизу, как у плиток */
+  .glass::before {
     content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 45%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.22), transparent);
-    border-radius: 24px 24px 50% 50%;
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at var(--mx, 25%) var(--my, 0%), rgba(255,255,255,.40), transparent 52%),
+      radial-gradient(120% 70% at 50% 125%, var(--glow), transparent 70%);
     pointer-events: none;
+    z-index: -1;
+    transition: opacity .3s;
   }
-
-  /* Градиентная грань стекла */
-  .card::after {
+  /* светящаяся грань */
+  .glass::after {
     content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 24px;
+    position: absolute; inset: 0;
+    border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg,
-      rgba(255,255,255,0.5), rgba(255,255,255,0.08) 40%,
-      rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.3));
+    background: linear-gradient(140deg, var(--edge), rgba(255,255,255,0) 35%, rgba(255,255,255,0) 65%, var(--edge));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
             mask-composite: exclude;
     pointer-events: none;
   }
 
+  .card {
+    width: 100%; max-width: 400px;
+    padding: 40px 26px 30px;
+    border-radius: 40px;
+    text-align: center;
+    animation: rise .8s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+
   .avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--card-border);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    margin-bottom: 18px;
+    width: 116px; height: 116px; border-radius: 50%; object-fit: cover;
+    display: block; margin: 0 auto 18px;
+    border: 3px solid rgba(255,255,255,.6);
+    box-shadow: 0 0 0 6px rgba(255,255,255,.14), 0 10px 28px rgba(0,0,0,.35);
   }
-
-  h1 {
-    font-size: 30px;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-    text-shadow: 0 2px 8px rgba(0,0,0,.4);
-  }
-
-  .tagline {
-    color: var(--text-dim);
-    font-size: 15px;
-    margin-bottom: 30px;
-    transition: .6s;
-  }
+  h1 { font-size: 32px; font-weight: 600; letter-spacing: .5px; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .tagline { margin: 6px 0 28px; font-size: 15px; color: var(--text-dim); text-shadow: 0 1px 6px rgba(0,0,0,.3); }
 
   .links { display: flex; flex-direction: column; gap: 12px; }
-
-  /* ===== ЖИДКОЕ СТЕКЛО: кнопки ===== */
   .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    position: relative;
-    overflow: hidden;
-    background: var(--btn);
-    border: 1px solid var(--btn-border);
-    color: var(--text);
-    text-decoration: none;
-    padding: 14px;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 500;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-    transition: 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 16px; border-radius: 999px;
+    color: var(--text); text-decoration: none;
+    font-size: 16px; font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,.3);
+    transition: transform .35s cubic-bezier(.3,1.6,.5,1), filter .25s;
   }
-  .btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 50%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.15), transparent);
-    border-radius: 14px 14px 50% 50%;
-    pointer-events: none;
+  .btn:hover { transform: translateY(-2px) scale(1.02); filter: brightness(1.12); }
+  .btn:active { transform: scale(.94, .9); filter: brightness(1.25); } /* «жидкое» сплющивание */
+  .icon { width: 22px; height: 22px; fill: currentColor; flex-shrink: 0; }
+
+  /* ===== Переключатель тем: капля скользит и растягивается ===== */
+  .switcher {
+    position: fixed; z-index: 10;
+    left: 50%; transform: translateX(-50%);
+    bottom: calc(22px + env(safe-area-inset-bottom));
+    display: flex; padding: 6px; border-radius: 999px;
   }
-  .btn:hover {
-    background: var(--card-border);
-    transform: translateY(-2px);
+  .switcher .opt {
+    position: relative; z-index: 2;
+    width: 48px; height: 48px; border: 0; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .switcher .opt i {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.8);
+    box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    transition: transform .3s cubic-bezier(.3,1.6,.5,1);
+  }
+  .switcher .opt.on i { transform: scale(1.15); }
+  .lens {
+    position: absolute; z-index: 1; top: 6px; left: 6px;
+    width: 48px; height: 48px; border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255,255,255,.38), rgba(255,255,255,.1));
+    -webkit-backdrop-filter: blur(3px) saturate(200%) brightness(1.2);
+            backdrop-filter: blur(3px) saturate(200%) brightness(1.2);
+    box-shadow:
+      inset 2px 2.5px 1px -1px rgba(255,255,255,.95),
+      inset -2px -2.5px 1px -1px rgba(255,255,255,.5),
+      inset 3px 4px 9px -2px rgba(140,210,255,.4),
+      inset -3px -4px 9px -2px rgba(255,160,215,.3),
+      0 6px 18px rgba(0,0,0,.25);
+    transition: left .28s cubic-bezier(.3,1.3,.5,1), width .28s cubic-bezier(.3,1.3,.5,1);
   }
 
-  .icon {
-    width: 22px;
-    height: 22px;
-    fill: currentColor;
-    flex-shrink: 0;
-  }
+  footer { margin-top: 26px; font-size: 13px; color: var(--text-dim); text-shadow: 0 1px 6px rgba(0,0,0,.4); }
 
-  /* ===== ЖИДКОЕ СТЕКЛО: кнопка темы ===== */
-  .theme-toggle {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    position: fixed;
-    border: 1px solid var(--card-border);
-    background: var(--card);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 4px 16px rgba(0,0,0,.3),
-                inset 0 1px 0 rgba(255,255,255,0.18);
-    overflow: hidden;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: .4s;
-  }
-  .theme-toggle::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 50%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-  .theme-toggle:active { transform: scale(.9); }
-
-  footer {
-    margin-top: auto;
-    padding-top: 40px;
-    color: var(--text-dim);
-    font-size: 13px;
-    transition: .6s;
-  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body data-theme="1">
-  <div class="bg"></div>
-  <div class="bg-overlay"></div>
+  <div class="bg" id="bg"></div>
+  <div class="bg-shade"></div>
 
-  <button class="theme-toggle" onclick="switchTheme()" title="Сменить тему">🎨</button>
-
-  <div class="card">
+  <main class="card glass">
     <img class="avatar" src="avatar.JPG" alt="eranos">
     <h1>eranos</h1>
     <p class="tagline">welcome to my page ✦</p>
 
     <div class="links">
-      <a class="btn" href="https://t.me/eranosfake" target="_blank">
+      <a class="btn glass" href="https://t.me/eranosfake" target="_blank" rel="noopener">
         <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.87 8.9 19.2c.53 0 .76-.23 1.04-.5l2.5-2.4 5.18 3.8c.95.52 1.62.25 1.88-.88L22.9 5.6c.3-1.38-.5-1.92-1.42-1.58L2.4 11.15c-1.34.52-1.33 1.27-.23 1.6l4.76 1.49L18.3 7.9c.56-.37 1.07-.17.65.2L9.04 15.87Z"/></svg>
         Telegram
       </a>
-      <a class="btn" href="https://www.tiktok.com/@kanasagods?_r=1&amp;_t=ZS-9ASi6LDthMF" target="_blank">
+      <a class="btn glass" href="https://www.tiktok.com/@kanasagods?_r=1&amp;_t=ZS-9ASi6LDthMF" target="_blank" rel="noopener">
         <svg class="icon" viewBox="0 0 24 24"><path d="M16.6 3c.36 1.98 1.7 3.52 3.9 3.68v3.1c-1.5.14-2.8-.34-4.3-1.24v6.1c0 3.78-2.76 6.36-6.25 6.36A5.9 5.9 0 0 1 4 14.9c0-3.4 2.9-5.9 6.7-5.7v3.2c-1.84-.34-3.4.76-3.4 2.4 0 1.5 1.2 2.55 2.7 2.55 1.7 0 3-1.2 3-3.3V3h3.6Z"/></svg>
         TikTok
       </a>
-      <a class="btn" href="mailto:wox333666@gmail.com">
+      <a class="btn glass" href="mailto:wox333666@gmail.com">
         <svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 7.3L4.2 7v10.8h15.6V7L12 12.3Z"/></svg>
         моя почта
       </a>
     </div>
-  </div>
+  </main>
 
   <footer>© 2026 eranos</footer>
 
+  <nav class="switcher glass" id="sw" aria-label="Тема">
+    <span class="lens" id="lens"></span>
+    <button class="opt" aria-label="Тема 1"><i style="background:#9bbfe0"></i></button>
+    <button class="opt" aria-label="Тема 2"><i style="background:#f2a95e"></i></button>
+    <button class="opt" aria-label="Тема 3"><i style="background:#7cc6e8"></i></button>
+    <button class="opt" aria-label="Тема 4"><i style="background:#6d6d78"></i></button>
+  </nav>
+
 <script>
-  let currentTheme = 1;
-  const totalThemes = 4;
-  function switchTheme() {
-    currentTheme = currentTheme % totalThemes + 1;
-    document.body.setAttribute('data-theme', currentTheme);
+  const SIZE = 48, PAD = 6;
+  const bg = document.getElementById('bg');
+  const lens = document.getElementById('lens');
+  const opts = [...document.querySelectorAll('.opt')];
+  let current = 0;
+
+  function place(i, animate) {
+    const from = current;
+    if (animate && from !== i) {
+      // капля растягивается между точками, потом схлопывается в новую
+      lens.style.left = PAD + Math.min(from, i) * SIZE + 'px';
+      lens.style.width = SIZE + Math.abs(i - from) * SIZE + 'px';
+      setTimeout(() => {
+        lens.style.left = PAD + i * SIZE + 'px';
+        lens.style.width = SIZE + 'px';
+      }, 170);
+    } else {
+      lens.style.left = PAD + i * SIZE + 'px';
+      lens.style.width = SIZE + 'px';
+    }
+    opts.forEach((o, k) => o.classList.toggle('on', k === i));
+    current = i;
   }
+
+  function setTheme(i, animate) {
+    if (animate) {
+      bg.classList.add('fade');
+      setTimeout(() => { document.body.setAttribute('data-theme', i + 1); bg.classList.remove('fade'); }, 220);
+    } else {
+      document.body.setAttribute('data-theme', i + 1);
+    }
+    place(i, animate);
+    try { localStorage.setItem('theme', i); } catch (e) {}
+  }
+
+  opts.forEach((o, i) => o.addEventListener('click', () => setTheme(i, true)));
+
+  let saved = 0;
+  try { saved = parseInt(localStorage.getItem('theme')) || 0; } catch (e) {}
+  if (saved < 0 || saved > 3) saved = 0;
+  lens.style.transition = 'none';
+  setTheme(saved, false);
+  requestAnimationFrame(() => requestAnimationFrame(() => lens.style.transition = ''));
+
+  // блик на стекле следует за пальцем / курсором
+  document.querySelectorAll('.glass').forEach(el => {
+    const move = e => {
+      const p = e.touches ? e.touches[0] : e;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', ((p.clientX - r.left) / r.width * 100) + '%');
+      el.style.setProperty('--my', ((p.clientY - r.top) / r.height * 100) + '%');
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('touchmove', move, { passive: true });
+  });
 </script>
 </body>
 </html>
