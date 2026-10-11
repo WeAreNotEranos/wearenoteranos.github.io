@@ -128,20 +128,29 @@ float sdBlob(vec2 p){
   return d;
 }
 
-/* Чистое стекло: внутри фон без искажений, преломление только в тонкой кромке */
+/* Стекло: внутри лёгкое размытие, у кромки преломление; цвета кромки берутся из самого фона */
+vec3 blurAt(vec2 p,float r){
+  vec3 c=bgAt(p)*2.;
+  c+=bgAt(p+vec2(r,0.))+bgAt(p-vec2(r,0.))+bgAt(p+vec2(0.,r))+bgAt(p-vec2(0.,r));
+  float q=r*.7;
+  c+=bgAt(p+vec2(q,q))+bgAt(p-vec2(q,q))+bgAt(p+vec2(q,-q))+bgAt(p+vec2(-q,q));
+  return c/10.;
+}
 vec3 glassCol(vec2 p,float depth,vec2 n,float rimW){
   float t=clamp(depth/rimW,0.,1.);
   float bend=pow(1.-t,2.6);
   vec2 off=n*bend*rimW*1.7;
-  vec3 g=vec3(bgAt(p+off).r,bgAt(p+off*1.12).g,bgAt(p+off*1.26).b);   /* дисперсия */
+  vec3 g=blurAt(p+off,4.*uDpr);                                  /* лёгкое матовое размытие */
+  g.r=mix(g.r,bgAt(p+off*.94).r,.35);                            /* едва заметная дисперсия */
+  g.b=mix(g.b,bgAt(p+off*1.08).b,.35);
   g=mix(vec3(dot(g,vec3(.299,.587,.114))),g,1.12);
+  vec3 hue=g/max(max(g.r,max(g.g,g.b)),.05);                     /* основной цвет фона рядом с краем */
   vec2 L=normalize(vec2(-.7,-.7));
   float lit=.3+.7*pow(abs(dot(n,L)),1.3);
-  vec3 iri=.55+.45*cos(atan(n.y,n.x)+vec3(0.,2.1,4.2));              /* розовый-жёлтый-зелёный */
-  g+=mix(vec3(1.),iri,.55)*smoothstep(1.8*uDpr,0.,depth)*lit*.95;     /* тонкое яркое кольцо */
-  g+=iri*smoothstep(1.4*uDpr,0.,abs(depth-4.*uDpr))*lit*.22;          /* радужная линия внутри */
-  g*=1.-.10*bend*(1.-lit);                                            /* лёгкий скос в тени */
-  g+=vec3(1.)*pow(max(dot(n,L),0.),10.)*(1.-t)*.28;                   /* блик */
+  g+=mix(vec3(1.),hue,.4)*smoothstep(1.8*uDpr,0.,depth)*lit*.95; /* тонкое кольцо: белое с оттенком фона */
+  g+=hue*smoothstep(1.4*uDpr,0.,abs(depth-4.*uDpr))*lit*.18;     /* вторая линия в цвете фона */
+  g*=1.-.10*bend*(1.-lit);
+  g+=vec3(1.)*pow(max(dot(n,L),0.),10.)*(1.-t)*.28;
   return g;
 }
 
