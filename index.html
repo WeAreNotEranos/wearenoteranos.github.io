@@ -5,192 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>eranos</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    min-height:100%;min-height:100dvh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));
+    color:#fff;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  }
+  /* Холст со стеклом (WebGL) и запасной фон */
+  #gl,.bg{position:fixed;left:0;top:0;z-index:-1}
+  .bg{width:100%;height:100%;background:#234 center/cover no-repeat}
+  html:not(.nogl) .bg{display:none}
+  .nogl #gl{display:none}
 
-  /* ===== ТЕМЫ ===== */
-  :root {
-    --bg-image: url('bg.JPG');
-    --shade: rgba(10,20,40,.08);
-    --g1: rgba(255,255,255,.18);
-    --g2: rgba(255,255,255,.03);
-    --edge: rgba(255,255,255,.6);
-    --glow: rgba(120,190,255,.30);
-    --text: #fff;
-    --text-dim: rgba(255,255,255,.88);
-  }
-  body[data-theme="2"] {
-    --bg-image: url('bg2.JPG');
-    --shade: rgba(60,25,0,.08);
-    --g1: rgba(255,224,175,.20);
-    --g2: rgba(255,190,120,.04);
-    --edge: rgba(255,232,190,.65);
-    --glow: rgba(255,170,90,.32);
-    --text: #fff8ee;
-    --text-dim: rgba(255,240,218,.9);
-  }
-  body[data-theme="3"] {
-    --bg-image: url('bg3.JPG');
-    --shade: rgba(5,25,45,.08);
-    --g1: rgba(195,232,252,.20);
-    --g2: rgba(150,205,235,.04);
-    --edge: rgba(205,238,255,.65);
-    --glow: rgba(90,190,255,.32);
-    --text: #f0faff;
-    --text-dim: rgba(228,244,253,.9);
-  }
-  body[data-theme="4"] {
-    --bg-image: url('bg4.JPG');
-    --shade: rgba(0,0,0,.16);
-    --g1: rgba(225,225,232,.15);
-    --g2: rgba(200,200,208,.03);
-    --edge: rgba(240,240,248,.45);
-    --glow: rgba(160,170,200,.22);
-    --text: #f2f2f2;
-    --text-dim: rgba(232,232,232,.78);
-  }
+  /* Запасной вариант, если WebGL недоступен */
+  .nogl .glass{background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 10px 30px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.3)}
+  .nogl .lens{background:rgba(255,255,255,.3);box-shadow:inset 1px 1px 1px rgba(255,255,255,.8),0 4px 12px rgba(0,0,0,.2)}
 
-  html { height: 100%; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-    min-height: 100%;
-    min-height: 100dvh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: calc(24px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));
-    color: var(--text);
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
+  .card{width:100%;max-width:400px;padding:40px 26px 30px;border-radius:40px;text-align:center;
+    animation:rise .8s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rise{from{transform:translateY(18px) scale(.97)}to{transform:none}}
 
-  /* Фон: чёткий, без размытия */
-  .bg {
-    position: fixed; inset: 0; z-index: -2;
-    background: var(--bg-image) center/cover no-repeat;
-    transition: opacity .3s ease;
-  }
-  .bg.fade { opacity: 0; }
-  .bg-shade { position: fixed; inset: 0; z-index: -1; background: var(--shade); pointer-events: none; }
+  .avatar{width:116px;height:116px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 18px;
+    border:3px solid rgba(255,255,255,.6);box-shadow:0 0 0 6px rgba(255,255,255,.14),0 10px 28px rgba(0,0,0,.35)}
+  h1{font-size:32px;font-weight:600;letter-spacing:.5px;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+  .tagline{margin:6px 0 28px;font-size:15px;color:rgba(255,255,255,.9);text-shadow:0 1px 8px rgba(0,0,0,.45)}
 
-  /* ===== LIQUID GLASS ===== */
-  .glass {
-    position: relative;
-    isolation: isolate;
-    background: linear-gradient(135deg, var(--g1), var(--g2));
-    -webkit-backdrop-filter: blur(7px) saturate(190%) brightness(1.1);
-            backdrop-filter: blur(7px) saturate(190%) brightness(1.1);
-    box-shadow:
-      inset 0 0 0 1px rgba(255,255,255,.12),
-      inset 2px 2.5px 1px -1px rgba(255,255,255,.85),    /* яркая кромка сверху-слева */
-      inset -2px -2.5px 1px -1px rgba(255,255,255,.45),  /* кромка снизу-справа */
-      inset 4px 5px 12px -2px rgba(140,210,255,.30),     /* голубая «радужная» кайма */
-      inset -4px -5px 12px -2px rgba(255,160,215,.22),   /* розовая кайма */
-      inset 0 0 26px rgba(255,255,255,.07),
-      0 16px 44px rgba(0,0,0,.26),
-      0 2px 6px rgba(0,0,0,.12);
-  }
-  /* блик под пальцем + свечение снизу, как у плиток */
-  .glass::before {
-    content: '';
-    position: absolute; inset: 0;
-    border-radius: inherit;
-    background:
-      radial-gradient(circle at var(--mx, 25%) var(--my, 0%), rgba(255,255,255,.40), transparent 52%),
-      radial-gradient(120% 70% at 50% 125%, var(--glow), transparent 70%);
-    pointer-events: none;
-    z-index: -1;
-    transition: opacity .3s;
-  }
-  /* светящаяся грань */
-  .glass::after {
-    content: '';
-    position: absolute; inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(140deg, var(--edge), rgba(255,255,255,0) 35%, rgba(255,255,255,0) 65%, var(--edge));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    pointer-events: none;
-  }
+  .links{display:flex;flex-direction:column;gap:12px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;border-radius:999px;
+    color:#fff;text-decoration:none;font-size:16px;font-weight:500;text-shadow:0 1px 6px rgba(0,0,0,.45);
+    transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+  .btn:hover{transform:translateY(-2px) scale(1.02)}
+  .btn:active{transform:scale(.94,.9)}
+  .icon{width:22px;height:22px;fill:currentColor;flex-shrink:0}
 
-  .card {
-    width: 100%; max-width: 400px;
-    padding: 40px 26px 30px;
-    border-radius: 40px;
-    text-align: center;
-    animation: rise .8s cubic-bezier(.2,.8,.2,1) both;
-  }
-  @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+  /* Переключатель тем */
+  .switcher{position:fixed;z-index:10;left:50%;transform:translateX(-50%);
+    bottom:calc(22px + env(safe-area-inset-bottom));display:flex;padding:6px;border-radius:999px}
+  .opt{position:relative;z-index:2;width:48px;height:48px;border:0;background:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center}
+  .opt i{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);
+    box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+  .opt.on i{transform:scale(1.15)}
+  .lens{position:absolute;z-index:1;top:6px;left:6px;width:48px;height:48px;border-radius:999px;
+    transition:left .28s cubic-bezier(.3,1.3,.5,1),width .28s cubic-bezier(.3,1.3,.5,1)}
 
-  .avatar {
-    width: 116px; height: 116px; border-radius: 50%; object-fit: cover;
-    display: block; margin: 0 auto 18px;
-    border: 3px solid rgba(255,255,255,.6);
-    box-shadow: 0 0 0 6px rgba(255,255,255,.14), 0 10px 28px rgba(0,0,0,.35);
-  }
-  h1 { font-size: 32px; font-weight: 600; letter-spacing: .5px; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
-  .tagline { margin: 6px 0 28px; font-size: 15px; color: var(--text-dim); text-shadow: 0 1px 6px rgba(0,0,0,.3); }
-
-  .links { display: flex; flex-direction: column; gap: 12px; }
-  .btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    padding: 16px; border-radius: 999px;
-    color: var(--text); text-decoration: none;
-    font-size: 16px; font-weight: 500;
-    text-shadow: 0 1px 4px rgba(0,0,0,.3);
-    transition: transform .35s cubic-bezier(.3,1.6,.5,1), filter .25s;
-  }
-  .btn:hover { transform: translateY(-2px) scale(1.02); filter: brightness(1.12); }
-  .btn:active { transform: scale(.94, .9); filter: brightness(1.25); } /* «жидкое» сплющивание */
-  .icon { width: 22px; height: 22px; fill: currentColor; flex-shrink: 0; }
-
-  /* ===== Переключатель тем: капля скользит и растягивается ===== */
-  .switcher {
-    position: fixed; z-index: 10;
-    left: 50%; transform: translateX(-50%);
-    bottom: calc(22px + env(safe-area-inset-bottom));
-    display: flex; padding: 6px; border-radius: 999px;
-  }
-  .switcher .opt {
-    position: relative; z-index: 2;
-    width: 48px; height: 48px; border: 0; background: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .switcher .opt i {
-    width: 18px; height: 18px; border-radius: 50%;
-    border: 1.5px solid rgba(255,255,255,.8);
-    box-shadow: 0 1px 4px rgba(0,0,0,.35);
-    transition: transform .3s cubic-bezier(.3,1.6,.5,1);
-  }
-  .switcher .opt.on i { transform: scale(1.15); }
-  .lens {
-    position: absolute; z-index: 1; top: 6px; left: 6px;
-    width: 48px; height: 48px; border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255,255,255,.38), rgba(255,255,255,.1));
-    -webkit-backdrop-filter: blur(3px) saturate(200%) brightness(1.2);
-            backdrop-filter: blur(3px) saturate(200%) brightness(1.2);
-    box-shadow:
-      inset 2px 2.5px 1px -1px rgba(255,255,255,.95),
-      inset -2px -2.5px 1px -1px rgba(255,255,255,.5),
-      inset 3px 4px 9px -2px rgba(140,210,255,.4),
-      inset -3px -4px 9px -2px rgba(255,160,215,.3),
-      0 6px 18px rgba(0,0,0,.25);
-    transition: left .28s cubic-bezier(.3,1.3,.5,1), width .28s cubic-bezier(.3,1.3,.5,1);
-  }
-
-  footer { margin-top: 26px; font-size: 13px; color: var(--text-dim); text-shadow: 0 1px 6px rgba(0,0,0,.4); }
-
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  footer{margin-top:26px;font-size:13px;color:rgba(255,255,255,.85);text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body data-theme="1">
+<body>
+  <canvas id="gl"></canvas>
   <div class="bg" id="bg"></div>
-  <div class="bg-shade"></div>
 
-  <main class="card glass">
+  <main class="card glass" data-r="40">
     <img class="avatar" src="avatar.JPG" alt="eranos">
     <h1>eranos</h1>
     <p class="tagline">welcome to my page ✦</p>
-
     <div class="links">
       <a class="btn glass" href="https://t.me/eranosfake" target="_blank" rel="noopener">
         <svg class="icon" viewBox="0 0 24 24"><path d="M9.04 15.87 8.9 19.2c.53 0 .76-.23 1.04-.5l2.5-2.4 5.18 3.8c.95.52 1.62.25 1.88-.88L22.9 5.6c.3-1.38-.5-1.92-1.42-1.58L2.4 11.15c-1.34.52-1.33 1.27-.23 1.6l4.76 1.49L18.3 7.9c.56-.37 1.07-.17.65.2L9.04 15.87Z"/></svg>
@@ -206,11 +80,10 @@
       </a>
     </div>
   </main>
-
   <footer>© 2026 eranos</footer>
 
-  <nav class="switcher glass" id="sw" aria-label="Тема">
-    <span class="lens" id="lens"></span>
+  <nav class="switcher glass" aria-label="Тема">
+    <span class="lens glass" data-k="2"></span>
     <button class="opt" aria-label="Тема 1"><i style="background:#9bbfe0"></i></button>
     <button class="opt" aria-label="Тема 2"><i style="background:#f2a95e"></i></button>
     <button class="opt" aria-label="Тема 3"><i style="background:#7cc6e8"></i></button>
@@ -218,61 +91,212 @@
   </nav>
 
 <script>
-  const SIZE = 48, PAD = 6;
-  const bg = document.getElementById('bg');
-  const lens = document.getElementById('lens');
-  const opts = [...document.querySelectorAll('.opt')];
-  let current = 0;
+/* ===== Темы: фото, оттенок стекла, цвет свечения ===== */
+const T = [
+  {img:'bg.JPG',  tint:[.78,.88,1],  glow:[.35,.60,1],  shade:.03, fb:['#6a8fb5','#2a3f5f']},
+  {img:'bg2.JPG', tint:[1,.85,.60],  glow:[1,.62,.30],   shade:.03, fb:['#f0a860','#5a2a10']},
+  {img:'bg3.JPG', tint:[.75,.90,1],  glow:[.30,.70,1],   shade:.04, fb:['#7cc6e8','#10304a']},
+  {img:'bg4.JPG', tint:[.85,.85,.9], glow:[.55,.60,.80], shade:.08, fb:['#555','#111']}
+];
 
-  function place(i, animate) {
-    const from = current;
-    if (animate && from !== i) {
-      // капля растягивается между точками, потом схлопывается в новую
-      lens.style.left = PAD + Math.min(from, i) * SIZE + 'px';
-      lens.style.width = SIZE + Math.abs(i - from) * SIZE + 'px';
-      setTimeout(() => {
-        lens.style.left = PAD + i * SIZE + 'px';
-        lens.style.width = SIZE + 'px';
-      }, 170);
-    } else {
-      lens.style.left = PAD + i * SIZE + 'px';
-      lens.style.width = SIZE + 'px';
-    }
-    opts.forEach((o, k) => o.classList.toggle('on', k === i));
-    current = i;
+/* ===== Шейдер: преломление, дисперсия, кромка ===== */
+const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const FS = `
+precision highp float;
+uniform vec2 uRes,uSzA,uSzB; uniform sampler2D uA,uB;
+uniform float uMix,uDpr,uShade; uniform vec3 uTint,uGlow; uniform int uN;
+uniform vec4 uBox[8]; uniform vec2 uPar[8];
+
+vec2 cover(vec2 p,vec2 sz){float s=max(uRes.x/sz.x,uRes.y/sz.y);vec2 d=sz*s;return (p-(uRes-d)*.5)/d;}
+vec3 bgAt(vec2 p){
+  if(uMix<.001) return texture2D(uA,cover(p,uSzA)).rgb;
+  if(uMix>.999) return texture2D(uB,cover(p,uSzB)).rgb;
+  return mix(texture2D(uA,cover(p,uSzA)).rgb,texture2D(uB,cover(p,uSzB)).rgb,uMix);
+}
+vec3 blurAt(vec2 p,float r){
+  vec3 c=bgAt(p)*2.;
+  c+=bgAt(p+vec2(r,0.));c+=bgAt(p-vec2(r,0.));c+=bgAt(p+vec2(0.,r));c+=bgAt(p-vec2(0.,r));
+  return c/6.;
+}
+float sdBox(vec2 p,vec4 b,float r){
+  vec2 q=abs(p-(b.xy+b.zw*.5))-b.zw*.5+r;
+  return length(max(q,0.))+min(max(q.x,q.y),0.)-r;
+}
+void main(){
+  vec2 p=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);
+  vec3 col=bgAt(p)*(1.-uShade);
+
+  /* мягкие тени под стеклом */
+  for(int i=0;i<8;i++){
+    if(i>=uN) break;
+    if(uPar[i].y>1.5) continue;
+    float d=sdBox(p-vec2(0.,10.*uDpr),uBox[i],uPar[i].x);
+    col*=1.-.20*smoothstep(28.*uDpr,0.,max(d,0.));
   }
 
-  function setTheme(i, animate) {
-    if (animate) {
-      bg.classList.add('fade');
-      setTimeout(() => { document.body.setAttribute('data-theme', i + 1); bg.classList.remove('fade'); }, 220);
-    } else {
-      document.body.setAttribute('data-theme', i + 1);
-    }
-    place(i, animate);
-    try { localStorage.setItem('theme', i); } catch (e) {}
+  for(int i=0;i<8;i++){
+    if(i>=uN) break;
+    vec4 b=uBox[i]; float r=uPar[i].x; float k=uPar[i].y;
+    float d=sdBox(p,b,r);
+    if(d>1.) continue;
+    float depth=-d;
+    vec2 n=normalize(vec2(sdBox(p+vec2(1.,0.),b,r)-sdBox(p-vec2(1.,0.),b,r),
+                          sdBox(p+vec2(0.,1.),b,r)-sdBox(p-vec2(0.,1.),b,r))+1e-5);
+    float rimW=min(min(b.z,b.w)*.4,22.*uDpr)*(k>1.5?1.4:1.);
+    float t=clamp(depth/rimW,0.,1.);
+    vec2 off=n*pow(1.-t,2.2)*rimW*1.15;      /* линза: у края картинка «загибается» */
+    float bl=3.*uDpr;
+    vec3 g;
+    g.r=blurAt(p+off,bl).r;                  /* дисперсия: каждый канал смещён по-разному */
+    g.g=blurAt(p+off*1.08,bl).g;
+    g.b=blurAt(p+off*1.16,bl).b;
+    float l=dot(g,vec3(.299,.587,.114));
+    g=mix(vec3(l),g,1.3);
+    g=g*.93+uTint*.10+.035*k;
+    float vy=clamp((p.y-b.y)/b.w,0.,1.);
+    g+=uGlow*.30*smoothstep(.45,1.,vy);      /* свечение снизу, как у плиток */
+    g+=vec3(.9,.95,1.)*pow(1.-t,3.)*.15;     /* внутреннее сияние у края */
+    float lit=.35+.65*pow(abs(dot(n,normalize(vec2(-.7,-.7)))),1.4);
+    g+=vec3(1.)*smoothstep(2.2*uDpr,0.,depth)*lit*.9;                       /* яркая кромка */
+    g+=vec3(1.)*smoothstep(1.2*uDpr,0.,abs(depth-5.*uDpr))*lit*.12;        /* вторая тонкая линия */
+    col=mix(col,g,smoothstep(1.,-1.,d));
   }
+  gl_FragColor=vec4(col,1.);
+}`;
 
-  opts.forEach((o, i) => o.addEventListener('click', () => setTheme(i, true)));
+const html = document.documentElement;
+const cv = document.getElementById('gl');
+const bgDiv = document.getElementById('bg');
+let gl = null, U = {}, texA, texB, showB = false, mix = 0, target = 0, dpr = 1;
 
-  let saved = 0;
-  try { saved = parseInt(localStorage.getItem('theme')) || 0; } catch (e) {}
-  if (saved < 0 || saved > 3) saved = 0;
-  lens.style.transition = 'none';
-  setTheme(saved, false);
-  requestAnimationFrame(() => requestAnimationFrame(() => lens.style.transition = ''));
+try {
+  gl = cv.getContext('webgl', {antialias:false, alpha:false});
+  if (!gl) throw 0;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw 0; return s; };
+  const pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw 0;
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  ['uRes','uSzA','uSzB','uMix','uDpr','uShade','uTint','uGlow','uN','uA','uB','uBox[0]','uPar[0]']
+    .forEach(n => U[n] = gl.getUniformLocation(pr, n));
+  const mk = unit => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([30,40,60,255]));
+    return t; };
+  texA = mk(0); texB = mk(1);
+  gl.uniform1i(U.uA, 0); gl.uniform1i(U.uB, 1);
+  gl.uniform2f(U.uSzA, 1, 1); gl.uniform2f(U.uSzB, 1, 1);
+} catch (e) { gl = null; html.classList.add('nogl'); }
 
-  // блик на стекле следует за пальцем / курсором
-  document.querySelectorAll('.glass').forEach(el => {
-    const move = e => {
-      const p = e.touches ? e.touches[0] : e;
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--mx', ((p.clientX - r.left) / r.width * 100) + '%');
-      el.style.setProperty('--my', ((p.clientY - r.top) / r.height * 100) + '%');
+function resize() {
+  if (!gl) return;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr);
+  cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+  gl.viewport(0, 0, cv.width, cv.height);
+}
+addEventListener('resize', resize); resize();
+
+/* Загрузка фото (с запасным градиентом, если файла нет) */
+function loadTex(i) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, 2048 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * s); c.height = Math.round(im.naturalHeight * s);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c);
     };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('touchmove', move, { passive: true });
+    im.onerror = () => {
+      const c = document.createElement('canvas'); c.width = 64; c.height = 128;
+      const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 128);
+      g.addColorStop(0, T[i].fb[0]); g.addColorStop(1, T[i].fb[1]);
+      x.fillStyle = g; x.fillRect(0, 0, 64, 128); res(c);
+    };
+    im.src = T[i].img;
   });
+}
+
+let cur = 0;
+function setTheme(i, instant) {
+  cur = i;
+  try { localStorage.setItem('theme', i); } catch (e) {}
+  place(i, !instant);
+  if (!gl) { bgDiv.style.backgroundImage = "url('" + T[i].img + "')"; return; }
+  loadTex(i).then(c => {
+    if (i !== cur) return;
+    const unit = showB ? 0 : 1;               /* заливаем в скрытую текстуру */
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, unit ? texB : texA);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.uniform2f(unit ? U.uSzB : U.uSzA, c.width, c.height);
+    showB = !showB; target = showB ? 1 : 0;
+    if (instant) mix = target;
+  });
+}
+
+/* ===== Рендер: каждый кадр читаем положение стеклянных блоков ===== */
+const els = [...document.querySelectorAll('.glass')];
+const boxes = new Float32Array(32), pars = new Float32Array(16);
+function frame() {
+  if (gl) {
+    mix += (target - mix) * 0.1; if (Math.abs(target - mix) < .002) mix = target;
+    let n = 0;
+    for (const el of els) {
+      if (n >= 8) break;
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) continue;
+      const sc = r.width / (el.offsetWidth || r.width);
+      const rad = (el.dataset.r ? +el.dataset.r : el.offsetHeight / 2) * sc;
+      boxes.set([r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr], n * 4);
+      pars.set([rad * dpr, el.dataset.k ? +el.dataset.k : 1], n * 2);
+      n++;
+    }
+    const t = T[cur];
+    gl.uniform2f(U.uRes, cv.width, cv.height);
+    gl.uniform1f(U.uMix, mix); gl.uniform1f(U.uDpr, dpr); gl.uniform1f(U.uShade, t.shade);
+    gl.uniform3fv(U.uTint, t.tint); gl.uniform3fv(U.uGlow, t.glow);
+    gl.uniform1i(U.uN, n);
+    gl.uniform4fv(U['uBox[0]'], boxes); gl.uniform2fv(U['uPar[0]'], pars);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== Переключатель: капля растягивается между точками ===== */
+const SIZE = 48, PAD = 6;
+const lens = document.querySelector('.lens');
+const opts = [...document.querySelectorAll('.opt')];
+let pos = 0;
+function place(i, animate) {
+  const from = pos;
+  if (animate && from !== i) {
+    lens.style.left = PAD + Math.min(from, i) * SIZE + 'px';
+    lens.style.width = SIZE + Math.abs(i - from) * SIZE + 'px';
+    setTimeout(() => { lens.style.left = PAD + i * SIZE + 'px'; lens.style.width = SIZE + 'px'; }, 170);
+  } else { lens.style.left = PAD + i * SIZE + 'px'; lens.style.width = SIZE + 'px'; }
+  opts.forEach((o, k) => o.classList.toggle('on', k === i));
+  pos = i;
+}
+opts.forEach((o, i) => o.addEventListener('click', () => setTheme(i, false)));
+
+let saved = 0;
+try { saved = parseInt(localStorage.getItem('theme')) || 0; } catch (e) {}
+if (saved < 0 || saved > 3) saved = 0;
+lens.style.transition = 'none';
+setTheme(saved, true);
+requestAnimationFrame(() => requestAnimationFrame(() => lens.style.transition = ''));
+frame();
 </script>
 </body>
 </html>
